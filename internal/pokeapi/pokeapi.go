@@ -6,9 +6,9 @@ import (
 )
 
 type LocationData struct {
-	Count    int       `json:"count"`
-	Next     string    `json:"next"`
-	Previous *string       `json:"previous"`
+	Count    int               `json:"count"`
+	Next     string            `json:"next"`
+	Previous *string           `json:"previous"`
 	Results  []LocationResults `json:"results"`
 }
 type LocationResults struct {
