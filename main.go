@@ -23,7 +23,7 @@ func main() {
 		if !ok {
 			fmt.Println("Invalid command, try 'help' for usage details")
 		} else {
-			err := command.callback(&config, cache)
+			err := command.callback(&config, cache, args[1:])
 			if err != nil {
 				fmt.Printf("Error: %s\n", err)
 			}

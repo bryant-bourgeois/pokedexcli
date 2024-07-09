@@ -11,7 +11,7 @@ import (
 type Command struct {
 	name        string
 	description string
-	callback    func(*Config, *pokecache.Cache) error
+	callback    func(*Config, *pokecache.Cache, []string) error
 }
 
 func instantiateCommands() map[string]Command {
@@ -39,15 +39,21 @@ func instantiateCommands() map[string]Command {
 			description: "Print the previous 20 map locations",
 			callback:    commandMapb,
 		},
+
+		"explore": {
+			name:        "explore",
+			description: "Find pokemon in a map locaiton. `explore <CITY_NAME>`",
+			callback:    commandExplore,
+		},
 	}
 }
 
-func commandExit(cfg *Config, c *pokecache.Cache) error {
+func commandExit(cfg *Config, c *pokecache.Cache, args []string) error {
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *Config, c *pokecache.Cache) error {
+func commandHelp(cfg *Config, c *pokecache.Cache, args []string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println()
@@ -58,7 +64,7 @@ func commandHelp(cfg *Config, c *pokecache.Cache) error {
 	return nil
 }
 
-func commandMap(cfg *Config, c *pokecache.Cache) error {
+func commandMap(cfg *Config, c *pokecache.Cache, args []string) error {
 	url := ""
 	if cfg.nextUrl == "" {
 		url = "https://pokeapi.co/api/v2/location-area"
@@ -104,7 +110,7 @@ func commandMap(cfg *Config, c *pokecache.Cache) error {
 	return nil
 }
 
-func commandMapb(cfg *Config, c *pokecache.Cache) error {
+func commandMapb(cfg *Config, c *pokecache.Cache, args []string) error {
 	if cfg.prevUrl == "" {
 		fmt.Println("No previous maps available...")
 		return nil
@@ -143,6 +149,37 @@ func commandMapb(cfg *Config, c *pokecache.Cache) error {
 	}
 	for _, val := range mapDataCached.Results {
 		fmt.Println(val.Name)
+	}
+	return nil
+}
+
+func commandExplore(cfg *Config, c *pokecache.Cache, args []string) error {
+	if len(args) < 1 {
+		fmt.Println("No city to explore. See 'help' command.")
+		return nil
+	}
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s", args[0])
+	locDataCached := pokeapi.LocationDetails{}
+	bytes, ok := c.Get(url)
+	if ok {
+		json.Unmarshal(bytes, &locDataCached)
+	} else {
+		locationData, err := pokeapi.GetLocation(url)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(&locationData)
+		if err != nil {
+			return err
+		}
+		c.Add(url, data)
+		for _, val := range locationData.PokemonEncounters {
+			fmt.Printf("- %s\n", val.Pokemon.Name)
+		}
+		return nil
+	}
+	for _, val := range locDataCached.PokemonEncounters {
+		fmt.Printf("- %s\n", val.Pokemon.Name)
 	}
 	return nil
 }
