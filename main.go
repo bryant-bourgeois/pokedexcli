@@ -22,10 +22,11 @@ func main() {
 		command, ok := commands[args[0]]
 		if !ok {
 			fmt.Println("Invalid command, try 'help' for usage details")
-		}
-		err := command.callback(&config, cache)
-		if err != nil {
-			fmt.Printf("Error: %s\n", err)
+		} else {
+			err := command.callback(&config, cache)
+			if err != nil {
+				fmt.Printf("Error: %s\n", err)
+			}
 		}
 		fmt.Println()
 	}

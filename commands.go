@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"internal/pokeapi"
 	"internal/pokecache"
@@ -64,19 +65,44 @@ func commandMap(cfg *Config, c *pokecache.Cache) error {
 	} else {
 		url = cfg.nextUrl
 	}
-	mapData, err := pokeapi.GetMaps(url)
-	if err != nil {
-		return err
+	mapDataCached := pokeapi.LocationData{}
+	bytes, ok := c.Get(url)
+	if ok {
+		json.Unmarshal(bytes, &mapDataCached)
+	} else {
+		mapData, err := pokeapi.GetMaps(url)
+		if err != nil {
+			fmt.Printf("Error getting maps from internet: %s\n", err)
+			return err
+		}
+		data, err := json.Marshal(&mapData)
+		if err != nil {
+			fmt.Printf("An error has occurred marshalling json for cache: %s\n", err)
+			return err
+		}
+		c.Add(url, data)
+		cfg.nextUrl = mapData.Next
+		if mapData.Previous == nil {
+			cfg.prevUrl = ""
+		} else {
+			cfg.prevUrl = *mapData.Previous
+		}
+		for _, val := range mapData.Results {
+			fmt.Println(val.Name)
+		}
+		fmt.Printf("Number of cache entries: %d", len(c.Entries))
+		return nil
 	}
-	cfg.nextUrl = mapData.Next
-	if mapData.Previous == nil {
+	cfg.nextUrl = mapDataCached.Next
+	if mapDataCached.Previous == nil {
 		cfg.prevUrl = ""
 	} else {
-		cfg.prevUrl = *mapData.Previous
+		cfg.prevUrl = *mapDataCached.Previous
 	}
-	for _, val := range mapData.Results {
+	for _, val := range mapDataCached.Results {
 		fmt.Println(val.Name)
 	}
+	fmt.Printf("Number of cache entries: %d", len(c.Entries))
 	return nil
 }
 
