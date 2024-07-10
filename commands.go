@@ -53,6 +53,12 @@ func instantiateCommands() map[string]Command {
 			description: "Attempt to catch pokemon. `catch <POKEMON>`",
 			callback:    commandCatch,
 		},
+
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect pokemon in your pokedex. `inspect <POKEMON>`",
+			callback:    commandInspect,
+		},
 	}
 }
 
@@ -241,4 +247,26 @@ func commandCatch(cfg *Config, c *pokecache.Cache, args []string) error {
 func AttemptCatch(bxp int) bool {
 	comp := rand.Intn(370)
 	return comp > bxp
+}
+
+func commandInspect(cfg *Config, c *pokecache.Cache, args []string) error {
+	if len(args) < 1 {
+		fmt.Println("No pokemon to catch. See 'help' command.")
+		return nil
+	}
+	pokemon, ok := cfg.Pokedex[args[0]]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+	fmt.Printf("Name: %s\nHeight: %d\nWeight: %d\n", pokemon.Name, pokemon.Height, pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, val := range pokemon.Stats {
+		fmt.Printf("  -%s: %v\n", val.Stat.Name, val.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, val := range pokemon.Types {
+		fmt.Printf("  - %s\n", val.Type.Name)
+	}
+	return nil
 }
