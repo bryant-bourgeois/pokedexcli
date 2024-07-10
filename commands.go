@@ -59,6 +59,12 @@ func instantiateCommands() map[string]Command {
 			description: "Inspect pokemon in your pokedex. `inspect <POKEMON>`",
 			callback:    commandInspect,
 		},
+
+		"pokedex": {
+			name:        "pokedex",
+			description: "View the pokemon that you've caught",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -267,6 +273,19 @@ func commandInspect(cfg *Config, c *pokecache.Cache, args []string) error {
 	fmt.Println("Types:")
 	for _, val := range pokemon.Types {
 		fmt.Printf("  - %s\n", val.Type.Name)
+	}
+	return nil
+}
+
+func commandPokedex(cfg *Config, c *pokecache.Cache, args []string) error {
+	if len(cfg.Pokedex) == 0 {
+		fmt.Println("Your Pokedex:")
+		fmt.Println("No pokemon have been caught")
+	} else {
+		fmt.Println("Your Pokedex:")
+		for _, val := range cfg.Pokedex {
+			fmt.Printf("  - %s\n", val.Name)
+		}
 	}
 	return nil
 }
