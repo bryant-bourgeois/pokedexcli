@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"internal/pokeapi"
 	"internal/pokecache"
 	"os"
 	"strings"
@@ -11,7 +12,9 @@ import (
 
 func main() {
 	commands := instantiateCommands()
-	config := Config{}
+	config := Config{
+		Pokedex: make(map[string]pokeapi.PokemonInfo),
+	}
 	cache := pokecache.NewCache(5 * time.Minute)
 	scanner := bufio.NewScanner(os.Stdin)
 	for {

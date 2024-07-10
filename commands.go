@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"internal/pokeapi"
 	"internal/pokecache"
+	"math/rand"
 	"os"
+	"time"
 )
 
 type Command struct {
@@ -42,8 +44,14 @@ func instantiateCommands() map[string]Command {
 
 		"explore": {
 			name:        "explore",
-			description: "Find pokemon in a map locaiton. `explore <CITY_NAME>`",
+			description: "Find pokemon in a map locaiton. `explore <MAP_LOCATION>`",
 			callback:    commandExplore,
+		},
+
+		"catch": {
+			name:        "catch",
+			description: "Attempt to catch pokemon. `catch <POKEMON>`",
+			callback:    commandCatch,
 		},
 	}
 }
@@ -182,4 +190,55 @@ func commandExplore(cfg *Config, c *pokecache.Cache, args []string) error {
 		fmt.Printf("- %s\n", val.Pokemon.Name)
 	}
 	return nil
+}
+
+func commandCatch(cfg *Config, c *pokecache.Cache, args []string) error {
+	if len(args) < 1 {
+		fmt.Println("No pokemon to catch. See 'help' command.")
+		return nil
+	}
+	_, ok := cfg.Pokedex[args[0]]
+	if ok {
+		fmt.Println("Pokemon has already been caught")
+		return nil
+	}
+	fmt.Printf("Throwing a Pokeball at %s...\n", args[0])
+	time.Sleep(1 * time.Second)
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s/", args[0])
+	pokeDataCached := pokeapi.PokemonInfo{}
+	bytes, ok := c.Get(url)
+	if ok {
+		json.Unmarshal(bytes, &pokeDataCached)
+	} else {
+		pokemonData, err := pokeapi.GetPokemon(url)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(&pokemonData)
+		if err != nil {
+			return err
+		}
+		c.Add(url, data)
+		caught := AttemptCatch(pokemonData.BaseExperience)
+		if caught {
+			cfg.Pokedex[pokemonData.Name] = pokemonData
+			fmt.Printf("%s was caught!\n", pokemonData.Name)
+		} else {
+			fmt.Printf("%s has escaped!\n", pokemonData.Name)
+		}
+		return nil
+	}
+	caught := AttemptCatch(pokeDataCached.BaseExperience)
+	if caught {
+		cfg.Pokedex[pokeDataCached.Name] = pokeDataCached
+		fmt.Printf("%s was caught!\n", pokeDataCached.Name)
+	} else {
+		fmt.Printf("%s has escaped!\n", pokeDataCached.Name)
+	}
+	return nil
+}
+
+func AttemptCatch(bxp int) bool {
+	comp := rand.Intn(370)
+	return comp > bxp
 }
